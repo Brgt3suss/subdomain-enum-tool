@@ -1,4 +1,6 @@
 import requests
+import tkinter as tk
+from tkinter import scrolledtext, messagebox
 
 def fetch_subdomains(domain):
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
@@ -9,29 +11,45 @@ def fetch_subdomains(domain):
             subdomains = set(entry["name_value"] for entry in data)
             return subdomains
         else:
-            print("Error: Unable to fetch data from crt.sh")
             return None
     except Exception as e:
-        print(f"Error: {e}")
         return None
 
-def main():
-    domain = input("Enter the target domain (e.g., example.com): ")
+def run_enumeration():
+    domain = entry.get()
+    if not domain:
+        messagebox.showerror("Error", "Please enter a domain!")
+        return
+
     subdomains = fetch_subdomains(domain)
     
     if subdomains:
-        print("\n[+] Found Subdomains:")
-        for sub in sorted(subdomains):
-            print(sub)
+        result_text.config(state=tk.NORMAL)
+        result_text.delete(1.0, tk.END)
+        result_text.insert(tk.END, "\n".join(sorted(subdomains)))
+        result_text.config(state=tk.DISABLED)
 
         # Save results to a file
         with open("subdomains.txt", "w") as f:
             for sub in sorted(subdomains):
                 f.write(sub + "\n")
         
-        print("\n[+] Subdomains saved in 'subdomains.txt'")
+        messagebox.showinfo("Success", "Subdomains saved in 'subdomains.txt'")
     else:
-        print("\n[-] No subdomains found.")
+        messagebox.showwarning("No Results", "No subdomains found.")
 
-if __name__ == "__main__":
-    main()
+# GUI Setup
+root = tk.Tk()
+root.title("Subdomain Enumeration Tool")
+root.geometry("500x400")
+
+tk.Label(root, text="Enter Domain:", font=("Arial", 12)).pack(pady=5)
+entry = tk.Entry(root, font=("Arial", 12), width=30)
+entry.pack(pady=5)
+
+tk.Button(root, text="Find Subdomains", command=run_enumeration, font=("Arial", 12)).pack(pady=10)
+
+result_text = scrolledtext.ScrolledText(root, width=50, height=15, state=tk.DISABLED)
+result_text.pack(pady=5)
+
+root.mainloop()
